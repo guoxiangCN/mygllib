@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="mygllib.h" />
+    <ClInclude Include="mygllib_blend.h" />
     <ClInclude Include="mygllib_canvas.h" />
     <ClInclude Include="mygllib_image.h" />
     <ClInclude Include="mygllib_types.h" />
@@ -138,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mygllib.cpp" />
+    <ClCompile Include="mygllib_blend.cpp" />
     <ClCompile Include="mygllib_canvas.cpp" />
     <ClCompile Include="mygllib_image.cpp" />
   </ItemGroup>

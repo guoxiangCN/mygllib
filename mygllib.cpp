@@ -10,6 +10,8 @@
 #include "mygllib_canvas.h"
 #include "mygllib_image.h"
 
+#pragma comment(lib, "Msimg32.lib")  // 链接库
+
 #define MAX_LOADSTRING 100
 
 HINSTANCE hInst;                      // 当前实例
@@ -17,12 +19,13 @@ WCHAR szTitle[MAX_LOADSTRING];        // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];  // 主窗口类名
 
 HWND hWnd;
-int wWidth = 1920;
-int wHeight = 1080;
+int wWidth = 1440;
+int wHeight = 900;
 HDC hDC;
 HDC hMem;
 mygl::Canvas* gPCanvas = nullptr;
 mygl::Image* gSampleImage = nullptr;
+mygl::Image* gSampleImage2 = nullptr;
 
 // 此代码模块中包含的函数的前向声明:
 ATOM MyRegisterClass(HINSTANCE hInstance);
@@ -86,6 +89,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // 初始化一张示例图片
     gSampleImage = mygl::ReadImageFromFile("C:\\Users\\mzygd\\Pictures\\1.png");
+    gSampleImage2 =
+        mygl::ReadImageFromFile("C:\\Users\\mzygd\\Pictures\\2.jpg");
 
     MSG msg;
 
@@ -105,8 +110,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 VOID Render() {
     gPCanvas->Clear();
 
-    // 绘制图片
+    // 绘制图片(禁用blend)
+    gPCanvas->Disable(mygl::GL_BLEND);
     gPCanvas->DrawImage(10, 10, gSampleImage);
+
+    // (启用blend)
+    // gPCanvas->Enable(mygl::GL_BLEND);
+    // gPCanvas->DrawImage(40, 40, gSampleImage2);
 
     // 老旧电视机雪花
     if (false) {
@@ -169,8 +179,24 @@ VOID Render() {
         }
     }
 
-    // 画到设备上
+    // 画到设备上(bitblt不支持alpha通道，因此rgba的a会被忽略)
+    // SRCCOPY: 将源矩形区域直接拷贝到目标矩形区域。
+    // https://learn.microsoft.com/zh-cn/windows/win32/api/wingdi/nf-wingdi-bitblt
     BitBlt(hDC, 0, 0, wWidth, wHeight, hMem, 0, 0, SRCCOPY);
+
+#if 0
+    BLENDFUNCTION blend = {0};
+    blend.BlendOp = AC_SRC_OVER;  // 标准混合操作
+    blend.BlendFlags = 0;         // 无特殊标志
+    blend.SourceConstantAlpha = 255;  // 全局透明度（255=不透明，0=完全透明）
+    blend.AlphaFormat =
+        AC_SRC_ALPHA;  // 启用源位图的 Alpha 通道（要求位图为 32 位 ARGB）
+    AlphaBlend(hDC, 0, 0,     // 目标位置
+               wWidth, wHeight,  // 目标尺寸
+               hMem, 0, 0,       // 源位置
+               wWidth, wHeight,  // 源尺寸
+               blend);
+#endif
 }
 
 //

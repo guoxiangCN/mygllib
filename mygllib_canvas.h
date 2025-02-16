@@ -12,14 +12,22 @@
 
 #include "mygllib_image.h"
 #include "mygllib_types.h"
+#include "mygllib_blend.h"
 
 namespace mygl {
+
+enum {
+    GL_BLEND = 1, // 开启颜色混合(类似opengl::BL_BLEND)
+};
 
 class Canvas {
 private:
     int m_width;
     int m_height;
     RGBA* m_buffer;
+    
+    uint64_t m_flags;
+    GlBlendContext m_blend_ctx;
 
 public:
     Canvas(int width, int height, void* buffer) {
@@ -27,6 +35,7 @@ public:
         m_width = width;
         m_height = height;
         m_buffer = reinterpret_cast<RGBA*>(buffer);
+        m_flags = 0;
     }
 
     ~Canvas() = default;
@@ -34,10 +43,55 @@ public:
     Canvas(const Canvas&) = delete;
     Canvas& operator=(const Canvas&) = delete;
 
+    /**
+     * @brief 清空整个画布
+     */
     void Clear() {
         if (m_buffer) {
             memset(m_buffer, 0, sizeof(RGBA) * m_width * m_height);
         }
+    }
+
+    /**
+     * @brief 启用特性
+     * @param feature 如GL_BLEND
+     */
+    void Enable(uint64_t feature) {
+        m_flags |= feature;
+    }
+
+    /**
+     * @brief 禁用特性
+     * @param feature 如GL_BLEND
+     */
+    void Disable(uint64_t feature) {
+        m_flags &= (~feature);
+    }
+
+    /**
+     * @brief 设置blend的混合因子
+     * @param sfactor 
+     * @param dfactor 
+     */
+    void glBlendFunc(GLenum sfactor, GLenum dfactor) {
+        // TODO: 检查是否有效.
+        // Ref: https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/src/mesa/main/blend.c?ref_type=heads#L127
+        m_blend_ctx.blend_src = sfactor;
+        m_blend_ctx.blend_dest = dfactor;
+    }
+
+    /**
+     * @brief 获取画布上指定坐标的已有颜色(背景色)
+     * @param x 
+     * @param y 
+     * @return 
+     */
+    RGBA GetColor(int x, int y) {
+        if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
+            return COLOR_UNDEFINED;
+        }
+
+        return m_buffer[y * m_width + x];
     }
 
     /**

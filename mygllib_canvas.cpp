@@ -2,6 +2,18 @@
 
 namespace mygl {
 
+#define NORM_ALPHA(x) ((x)/255.f)
+
+static inline RGBA applyBlend(GlBlendContext *ctx, RGBA src_color, RGBA dest_color) { 
+    RGBA output; 
+    float srcAlpha = NORM_ALPHA(src_color.m_a) *0.5;
+    output.m_r = src_color.m_r * srcAlpha + dest_color.m_r * (1 - srcAlpha);
+    output.m_g = src_color.m_g * srcAlpha + dest_color.m_g * (1 - srcAlpha);
+    output.m_b = src_color.m_b * srcAlpha + dest_color.m_b * (1 - srcAlpha);
+    output.m_a = src_color.m_a * srcAlpha + dest_color.m_a * (1 - srcAlpha);
+    return output;
+}
+
 void Canvas::DrawLineV1(Point2D pt1, Point2D pt2, RGBA color) {
     double k = (pt1.x < pt2.x) ? ((pt2.y - pt1.y) / (pt2.x - pt1.x))
                                : ((pt1.y - pt2.y) / (pt1.x - pt2.x));
@@ -111,7 +123,15 @@ void Canvas::DrawTriangleV1(Point2D pt1, Point2D pt2, Point2D pt3) {
 void Canvas::DrawImage(int x, int y, Image* image) {
     for (int u = 0; u < image->GetWidth(); u++) {
         for (int v = 0; v < image->GetHeight(); v++) {
-            DrawPoint(Point2D(x + u, y + v), image->GetColor(u, v));
+            RGBA srcColor = image->GetColor(u, v);
+            RGBA destColor = GetColor(x + u, y + v);
+            if (m_flags & GL_BLEND) {
+                RGBA finalColor = applyBlend(&m_blend_ctx,srcColor, destColor);
+                DrawPoint(Point2D(x + u, y + v), finalColor);
+            } else {
+                DrawPoint(Point2D(x + u, y + v), srcColor);
+            }
+            
         }
     }
 }
